@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { background: #0d0d14; font-family: 'Space Grotesk', sans-serif; color: #e8e8f0; }
+
+    /* ── SETUP SCREEN ── */
+    .setup { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .setup-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 2rem; width: 100%; max-width: 440px; }
+    .setup-title { font-family: 'Space Mono', monospace; font-size: 22px; color: #f0f0ff; margin-bottom: .4rem; }
+    .setup-sub { font-size: 13px; color: #555; margin-bottom: 1.75rem; line-height: 1.7; }
+    .setup-label { font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #444; margin-bottom: .5rem; }
+    .setup-input { width: 100%; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 10px; padding: .75rem 1rem; color: #f0f0ff; font-family: 'Space Mono', monospace; font-size: 13px; outline: none; margin-bottom: 1.25rem; transition: border-color .2s; }
+    .setup-input:focus { border-color: #6366f1; }
+    .setup-btn { width: 100%; background: #6366f1; color: #fff; border: none; border-radius: 10px; padding: .75rem; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .2s; }
+    .setup-btn:hover { opacity: .85; }
+    .setup-note { font-size: 11px; color: #333; margin-top: 1rem; line-height: 1.6; text-align: center; }
+
+    /* ── DASHBOARD ── */
+    .shell { padding: 1.5rem; max-width: 700px; margin: 0 auto; }
+    .topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; }
+    .clock { font-family: 'Space Mono', monospace; font-size: 56px; font-weight: 700; line-height: 1; color: #f0f0ff; letter-spacing: -1px; }
+    .date { font-size: 13px; color: #555; margin-top: 5px; }
+    .tw-btns { display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end; margin-top: 8px; }
+    .tw-btn { font-size: 11px; padding: 4px 10px; border-radius: 6px; border: 1px solid #1e1e2a; background: transparent; color: #444; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: all .15s; }
+    .tw-btn.active { background: #6366f1; color: #fff; border-color: #6366f1; }
+    .lbl { font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: #333; margin-bottom: .7rem; }
+    .sec { margin-bottom: 1.4rem; }
+
+    /* ── PANEL FOOTER ── */
+    .panel-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 0 2px; }
+    .panel-src { font-size: 11px; color: #2e2e44; display: flex; align-items: center; gap: 4px; }
+    .panel-upd { font-size: 11px; color: #2e2e44; display: flex; align-items: center; gap: 4px; }
+
+    /* ── WEATHER ── */
+    .wx-wrap { border-radius: 16px; overflow: hidden; background: #0d0d14; border: 1px solid rgba(255,255,255,.07); }
+    .wx-sky { height: 110px; position: relative; overflow: hidden; background: linear-gradient(160deg,#0f0f23 0%,#1a1040 60%,#251555 100%); }
+    .wx-body { padding: 1rem 1.25rem; }
+    .wx-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: .75rem; }
+    .wx-temp { font-family: 'Space Mono', monospace; font-size: 56px; line-height: 1; color: #fff; }
+    .wx-cond { font-size: 13px; color: #8b8bcc; margin-bottom: 4px; }
+    .wx-hl { font-size: 13px; color: #555; }
+    .wx-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .wx-stat { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); border-radius: 10px; padding: 8px; text-align: center; }
+    .wx-stat-lbl { font-size: 10px; color: #444; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+    .wx-stat-val { font-size: 14px; font-weight: 600; color: #e0e0ff; }
+
+    /* ── SKY ANIMATION ── */
+    .star { position: absolute; border-radius: 50%; background: #fff; }
+    .moon { position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(255,248,200,.85); box-shadow: 0 0 20px rgba(255,248,180,.3); }
+    @keyframes shoot { 0% { transform: translateX(0) translateY(0); opacity: 1; } 100% { transform: translateX(-120px) translateY(60px); opacity: 0; } }
+    .sstar { position: absolute; width: 60px; height: 1px; background: linear-gradient(to left, rgba(255,255,255,.8), transparent); animation: shoot 2.5s ease-out infinite; }
+
+    /* ── TRAIN CARDS ── */
+    .train-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tc { border-radius: 14px; padding: 1rem 1.1rem; position: relative; overflow: hidden; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); }
+    .tc-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 3px 0 0 3px; }
+    .tc-name { font-size: 14px; font-weight: 600; color: #e0e0ff; margin-bottom: 2px; padding-left: 12px; }
+    .tc-route { font-size: 11px; color: #444; margin-bottom: .8rem; padding-left: 12px; }
+    .tc-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 6px; margin-left: 12px; }
+    .tc-note { font-size: 10px; color: #333; margin-top: 6px; padding-left: 12px; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+    .blink-dot { width: 7px; height: 7px; border-radius: 50%; animation: blink 1.8s ease-in-out infinite; flex-shrink: 0; }
+
+    /* ── FORECAST ── */
+    .fc-row { display: flex; gap: 8px; }
+    .fc { flex: 1; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); border-radius: 12px; padding: 10px 6px; text-align: center; }
+    .fc-d { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 5px; }
+    .fc-em { font-size: 19px; margin-bottom: 5px; }
+    .fc-h { font-size: 14px; font-weight: 500; color: #e0e0ff; }
+    .fc-l { font-size: 11px; color: #444; margin-top: 1px; }
+
+    /* ── SETTINGS BTN ── */
+    .settings-btn { position: fixed; bottom: 1rem; right: 1rem; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #333; font-size: 16px; transition: all .2s; }
+    .settings-btn:hover { color: #6366f1; border-color: #6366f1; }
+  </style>
+</head>
+<body>
+
+  <!-- ── SETUP SCREEN ── -->
+  <div id="setupScreen" class="setup" style="display:none">
+    <div class="setup-card">
+      <div class="setup-title">Kitchen Dashboard</div>
+      <div class="setup-sub">Welcome, Reuben. Enter your credentials below to enable live data. Everything is stored only on this device.</div>
+
+      <div class="setup-label">Transport Victoria Subscription Key</div>
+      <input class="setup-input" id="keyInput" type="password" placeholder="Paste your TV subscription key…" />
+
+      <div class="setup-label">BOM Proxy URL (Cloudflare Worker)</div>
+      <input class="setup-input" id="proxyInput" type="text" placeholder="https://your-worker.workers.dev" />
+
+      <button class="setup-btn" onclick="saveSetup()">Save &amp; Launch Dashboard</button>
+      <div class="setup-note">Your keys are saved in this browser only and never uploaded anywhere. Tap ⚙ on the dashboard to update them at any time.</div>
+    </div>
+  </div>
+
+  <!-- ── MAIN DASHBOARD ── -->
+  <div id="dashboard" class="shell" style="display:none">
+
+    <div class="topbar">
+      <div>
+        <div class="clock" id="clk">--:--</div>
+        <div class="date" id="dt">--</div>
+      </div>
+      <div>
+        <div class="tw-btns">
+          <button class="tw-btn" onclick="setW('morning',this)">Morning</button>
+          <button class="tw-btn" onclick="setW('afternoon',this)">Afternoon</button>
+          <button class="tw-btn" onclick="setW('evening',this)">Evening</button>
+          <button class="tw-btn active" onclick="setW('auto',this)">Auto</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAINS -->
+    <div class="sec" id="trainSec" style="display:none">
+      <div class="lbl">Train status</div>
+      <div class="train-grid">
+        <div class="tc">
+          <div class="tc-accent" style="background:#e84855"></div>
+          <div class="tc-name">Hurstbridge</div>
+          <div class="tc-route">Clifton Hill → Hurstbridge</div>
+          <div id="hbBadge" class="tc-badge" style="background:rgba(255,255,255,.05);color:#555">
+            <div class="blink-dot" style="background:#555"></div><span>Loading…</span>
+          </div>
+          <div class="tc-note" id="hbNote"></div>
+        </div>
+        <div class="tc">
+          <div class="tc-accent" style="background:#3b82f6"></div>
+          <div class="tc-name">Mernda</div>
+          <div class="tc-route">Clifton Hill → Mernda</div>
+          <div id="mdBadge" class="tc-badge" style="background:rgba(255,255,255,.05);color:#555">
+            <div class="blink-dot" style="background:#555"></div><span>Loading…</span>
+          </div>
+          <div class="tc-note" id="mdNote"></div>
+        </div>
+      </div>
+      <div class="panel-footer">
+        <div class="panel-src"><i class="ti ti-train"></i> Transport Victoria — GTFS Realtime</div>
+        <div class="panel-upd"><i class="ti ti-refresh"></i> Updated <span id="trainUpd">--</span></div>
+      </div>
+    </div>
+
+    <!-- WEATHER -->
+    <div class="sec">
+      <div class="lbl">Weather — Melbourne</div>
+      <div class="wx-wrap">
+        <div class="wx-sky" id="sky">
+          <div class="moon" style="top:20px;right:30px"></div>
+          <div class="sstar" style="top:15px;right:60px;animation-delay:0s"></div>
+          <div class="sstar" style="top:35px;right:100px;animation-delay:1.2s;opacity:.6"></div>
+        </div>
+        <div class="wx-body">
+          <div class="wx-row">
+            <div class="wx-temp" id="wxTemp">--°</div>
+            <div style="text-align:right">
+              <div class="wx-cond" id="wxCond">--</div>
+              <div class="wx-hl" id="wxHL">H --° / L --°</div>
+            </div>
+          </div>
+          <div class="wx-grid">
+            <div class="wx-stat"><div class="wx-stat-lbl">Rain</div><div class="wx-stat-val" id="wxRain" style="color:#6366f1">--%</div></div>
+            <div class="wx-stat"><div class="wx-stat-lbl">Wind</div><div class="wx-stat-val" id="wxWind">--</div></div>
+            <div class="wx-stat"><div class="wx-stat-lbl">Humidity</div><div class="wx-stat-val" id="wxHum">--%</div></div>
+            <div class="wx-stat"><div class="wx-stat-lbl">Feels like</div><div class="wx-stat-val" id="wxFeel">--°</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-footer">
+        <div class="panel-src"><i class="ti ti-cloud"></i> Bureau of Meteorology — Melbourne (Olympic Park)</div>
+        <div class="panel-upd"><i class="ti ti-refresh"></i> Updated <span id="wxUpd">--</span></div>
+      </div>
+    </div>
+
+    <!-- FORECAST -->
+    <div class="sec">
+      <div class="lbl">5-day forecast</div>
+      <div class="fc-row" id="fcRow"></div>
+    </div>
+
+  </div>
+
+  <!-- SETTINGS BUTTON -->
+  <button class="settings-btn" id="settingsBtn" onclick="showSetup()" title="Settings" style="display:none" aria-label="Open settings">⚙</button>
+
+  <script>
+    const WMO_ICONS = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',99:'⛈️'};
+    const WMO_DESC = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Showers',81:'Heavy showers',82:'Violent showers',95:'Thunderstorm',99:'Thunderstorm'};
+
+    let tvKey = '';
+    let proxyUrl = '';
+    let currentWindow = 'auto';
+    let trainFetchedAt = null;
+    let wxFetchedAt = null;
+
+    function fmt(d) {
+      if (!d) return '--';
+      return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0') + ':' + String(d.getSeconds()).padStart(2,'0');
+    }
+
+    function saveSetup() {
+      const k = document.getElementById('keyInput').value.trim();
+      const p = document.getElementById('proxyInput').value.trim();
+      if (!k) { alert('Please enter your Transport Victoria subscription key.'); return; }
+      if (!p) { alert('Please enter your Cloudflare Worker proxy URL.'); return; }
+      localStorage.setItem('tv_key', k);
+      localStorage.setItem('bom_proxy', p);
+      tvKey = k;
+      proxyUrl = p;
+      document.getElementById('setupScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('settingsBtn').style.display = 'flex';
+      init();
+    }
+
+    function showSetup() {
+      document.getElementById('keyInput').value = localStorage.getItem('tv_key') || '';
+      document.getElementById('proxyInput').value = localStorage.getItem('bom_proxy') || '';
+      document.getElementById('setupScreen').style.display = 'flex';
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('settingsBtn').style.display = 'none';
+    }
+
+    function autoW() {
+      const h = new Date().getHours();
+      const isWeekday = new Date().getDay() % 6 !== 0;
+      if (isWeekday && h >= 6 && h < 9) return 'morning';
+      if (isWeekday && h >= 15 && h < 18) return 'afternoon';
+      return 'evening';
+    }
+
+    function setW(w, btn) {
+      currentWindow = w;
+      document.querySelectorAll('.tw-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const show = w === 'morning' || w === 'afternoon' || (w === 'auto' && ['morning','afternoon'].includes(autoW()));
+      document.getElementById('trainSec').style.display = show ? 'block' : 'none';
+    }
+
+    function tick() {
+      const n = new Date();
+      document.getElementById('clk').textContent = String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      document.getElementById('dt').textContent = days[n.getDay()] + ', ' + n.getDate() + ' ' + months[n.getMonth()] + ' ' + n.getFullYear();
+      if (trainFetchedAt) document.getElementById('trainUpd').textContent = fmt(trainFetchedAt);
+      if (wxFetchedAt) document.getElementById('wxUpd').textContent = fmt(wxFetchedAt);
+      if (currentWindow === 'auto') {
+        const show = ['morning','afternoon'].includes(autoW());
+        document.getElementById('trainSec').style.display = show ? 'block' : 'none';
+      }
+    }
+
+    // ── TRAINS ──
+    async function fetchTrains() {
+      if (!tvKey) return;
+      try {
+        const res = await fetch('https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-servicealerts', {
+          headers: { 'Ocp-Apim-Subscription-Key': tvKey }
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const buf = await res.arrayBuffer();
+        parseTrainAlerts(buf);
+        trainFetchedAt = new Date();
+      } catch(e) {
+        setTrainCard('hb', 'error', 'Could not load — check API key');
+        setTrainCard('md', 'error', 'Could not load — check API key');
+      }
+    }
+
+    function parseTrainAlerts(buf) {
+      const text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(buf));
+      const hbHit = /hurstbridge/i.test(text);
+      const mdHit = /mernda/i.test(text);
+      setTrainCard('hb', hbHit ? 'warn' : 'ok', hbHit ? 'Disruption active — check PTV app for details' : 'No disruptions reported');
+      setTrainCard('md', mdHit ? 'warn' : 'ok', mdHit ? 'Disruption active — check PTV app for details' : 'No disruptions reported');
+    }
+
+    function setTrainCard(line, status, note) {
+      const badge = document.getElementById(line + 'Badge');
+      const noteEl = document.getElementById(line + 'Note');
+      const bg    = { ok:'rgba(74,222,128,.1)',  warn:'rgba(245,158,11,.1)',  error:'rgba(239,68,68,.1)' };
+      const col   = { ok:'#4ade80',              warn:'#f59e0b',             error:'#ef4444' };
+      const label = { ok:'On time',              warn:'Disruption',          error:'Unavailable' };
+      badge.style.background = bg[status];
+      badge.style.color = col[status];
+      badge.querySelector('.blink-dot').style.background = col[status];
+      badge.querySelector('.blink-dot').style.boxShadow = '0 0 6px ' + col[status];
+      badge.querySelector('span').textContent = label[status];
+      noteEl.textContent = note;
+    }
+
+    // ── WEATHER ──
+    async function fetchWeather() {
+      try {
+        const url = 'https://api.open-meteo.com/v1/forecast?latitude=-37.8136&longitude=144.9631'
+          + '&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max'
+          + '&current_weather=true'
+          + '&hourly=relativehumidity_2m,apparent_temperature,windspeed_10m,precipitation_probability'
+          + '&timezone=Australia%2FMelbourne&forecast_days=6';
+        const fRes = await fetch(url);
+        const fData = await fRes.json();
+        renderForecast(fData);
+
+        if (proxyUrl) {
+          try {
+            const bRes = await fetch(proxyUrl + '/bom');
+            const bData = await bRes.json();
+            renderBOMCurrent(bData, fData);
+          } catch(e) {
+            renderOMCurrent(fData);
+          }
+        } else {
+          renderOMCurrent(fData);
+        }
+        wxFetchedAt = new Date();
+      } catch(e) {
+        document.getElementById('wxCond').textContent = 'Could not load weather';
+      }
+    }
+
+    function renderBOMCurrent(bom, forecast) {
+      const obs = bom?.observations?.data?.[0];
+      if (!obs) { renderOMCurrent(forecast); return; }
+      document.getElementById('wxTemp').textContent = Math.round(obs.air_temp) + '°';
+      document.getElementById('wxWind').textContent = Math.round(obs.wind_spd_kmh) + ' km/h';
+      document.getElementById('wxHum').textContent  = Math.round(obs.rel_hum) + '%';
+      if (forecast) {
+        const code = forecast.current_weather?.weathercode;
+        document.getElementById('wxCond').textContent = WMO_DESC[code] || '--';
+        const nowH = new Date().getHours();
+        const feel = forecast.hourly?.apparent_temperature?.[nowH];
+        const rain = forecast.hourly?.precipitation_probability?.[nowH];
+        const hi   = forecast.daily?.temperature_2m_max?.[0];
+        const lo   = forecast.daily?.temperature_2m_min?.[0];
+        if (feel != null) document.getElementById('wxFeel').textContent = Math.round(feel) + '°';
+        if (rain != null) document.getElementById('wxRain').textContent = Math.round(rain) + '%';
+        if (hi && lo)     document.getElementById('wxHL').textContent   = 'H ' + Math.round(hi) + '° / L ' + Math.round(lo) + '°';
+      }
+    }
+
+    function renderOMCurrent(data) {
+      const cw   = data.current_weather;
+      const nowH = new Date().getHours();
+      document.getElementById('wxTemp').textContent = Math.round(cw.temperature) + '°';
+      document.getElementById('wxCond').textContent = WMO_DESC[cw.weathercode] || '--';
+      document.getElementById('wxWind').textContent = Math.round(cw.windspeed) + ' km/h';
+      const hum  = data.hourly?.relativehumidity_2m?.[nowH];
+      const feel = data.hourly?.apparent_temperature?.[nowH];
+      const rain = data.hourly?.precipitation_probability?.[nowH];
+      const hi   = data.daily?.temperature_2m_max?.[0];
+      const lo   = data.daily?.temperature_2m_min?.[0];
+      if (hum  != null) document.getElementById('wxHum').textContent  = Math.round(hum) + '%';
+      if (feel != null) document.getElementById('wxFeel').textContent = Math.round(feel) + '°';
+      if (rain != null) document.getElementById('wxRain').textContent = Math.round(rain) + '%';
+      if (hi && lo)     document.getElementById('wxHL').textContent   = 'H ' + Math.round(hi) + '° / L ' + Math.round(lo) + '°';
+    }
+
+    function renderForecast(data) {
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const row  = document.getElementById('fcRow');
+      row.innerHTML = '';
+      for (let i = 1; i <= 5; i++) {
+        const d    = new Date(data.daily.time[i]);
+        const code = data.daily.weathercode[i];
+        const hi   = Math.round(data.daily.temperature_2m_max[i]);
+        const lo   = Math.round(data.daily.temperature_2m_min[i]);
+        row.innerHTML += `<div class="fc"><div class="fc-d">${days[d.getDay()]}</div><div class="fc-em">${WMO_ICONS[code]||'🌡️'}</div><div class="fc-h">${hi}°</div><div class="fc-l">${lo}°</div></div>`;
+      }
+    }
+
+    function buildStars() {
+      const sky = document.getElementById('sky');
+      for (let i = 0; i < 30; i++) {
+        const s  = document.createElement('div');
+        s.className = 'star';
+        const sz = Math.random() * 1.5 + 0.5;
+        Object.assign(s.style, { width: sz+'px', height: sz+'px', top: Math.random()*100+'%', left: Math.random()*100+'%', opacity: Math.random()*.6+.1 });
+        sky.appendChild(s);
+      }
+    }
+
+    function init() {
+      buildStars();
+      tick();
+      setInterval(tick, 1000);
+      fetchWeather();
+      setInterval(fetchWeather, 10 * 60 * 1000);
+      fetchTrains();
+      setInterval(fetchTrains, 30 * 1000);
+      setW('auto', document.querySelector('.tw-btn.active'));
+    }
+
+    window.addEventListener('load', () => {
+      tvKey    = localStorage.getItem('tv_key')   || '';
+      proxyUrl = localStorage.getItem('bom_proxy') || '';
+      if (tvKey && proxyUrl) {
+        document.getElementById('setupScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display   = 'block';
+        document.getElementById('settingsBtn').style.display = 'flex';
+        init();
+      } else {
+        document.getElementById('setupScreen').style.display = 'flex';
+      }
+    });
+  </script>
+</body>
+</html>
