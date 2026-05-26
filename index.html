@@ -327,7 +327,7 @@
     function renderBOMCurrent(bom, forecast) {
       const obs = bom?.observations?.data?.[0];
       if (!obs) { renderOMCurrent(forecast); return; }
-      document.getElementById('wxTemp').textContent = Math.round(obs.air_temp) + '°';
+      document.getElementById('wxTemp').textContent = obs.air_temp.toFixed(1) + '°';
       document.getElementById('wxWind').textContent = Math.round(obs.wind_spd_kmh) + ' km/h';
       document.getElementById('wxHum').textContent  = Math.round(obs.rel_hum) + '%';
       if (forecast) {
