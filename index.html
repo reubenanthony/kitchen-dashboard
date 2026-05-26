@@ -262,9 +262,7 @@
     async function fetchTrains() {
       if (!tvKey) return;
       try {
-        const res = await fetch('https://data-exchange-api.vicroads.vic.gov.au/opendata/v1/gtfsr/metrotrain-servicealerts', {
-          headers: { 'Ocp-Apim-Subscription-Key': tvKey }
-        });
+        const res = await fetch(proxyUrl + '/trains?key=' + encodeURIComponent(tvKey));
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const buf = await res.arrayBuffer();
         parseTrainAlerts(buf);
